@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Output (generated at runtime)
+output/screenshots/
+output/camera_states/
+output/action_history.json
+output/llm_prompt.txt
+
+# Data (large binary files)
+data/*.raw
+data/*.nrrd
+data/*.mhd
+data/*.mha
+
+# OS
+.DS_Store
+Thumbs.db
