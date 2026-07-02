@@ -1,6 +1,7 @@
 import json
 import shutil
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -28,7 +29,7 @@ class CameraReasoningSession:
         isovalue: float = 80,
         output_dir: str = "output",
         target_description: str = "No target description provided.",
-        target_image_path: str | None = None,
+        target_image_path: Optional[str] = None,
     ):
         self.raw_path = raw_path
         self.dimensions = dimensions
@@ -44,8 +45,8 @@ class CameraReasoningSession:
         self._image_data = None
 
         self._step = 0
-        self._action_history: list[dict] = []
-        self._camera_state_stack: list[dict] = []
+        self._action_history: List[Dict] = []
+        self._camera_state_stack: List[Dict] = []
 
     # ------------------------------------------------------------------
     # Public API
@@ -165,7 +166,7 @@ class CameraReasoningSession:
         self.write_llm_prompt()
         print(f"Step {self._step}: UNDO_LAST applied.")
 
-    def _save_screenshot(self, action_name: str | None) -> str:
+    def _save_screenshot(self, action_name: Optional[str]) -> str:
         latest = str(self.output_dir / "screenshots" / "latest.png")
         if action_name is None:
             step_name = f"step_{self._step:03d}.png"
@@ -177,7 +178,7 @@ class CameraReasoningSession:
         shutil.copy(latest, step_path)
         return latest
 
-    def _save_camera_state(self, action_name: str | None):
+    def _save_camera_state(self, action_name: Optional[str]):
         camera = self._renderer.GetActiveCamera()
         state = get_camera_state(camera)
         latest = self.output_dir / "camera_states" / "latest_camera.json"

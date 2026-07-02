@@ -1,14 +1,16 @@
 from pathlib import Path
+from typing import Dict, List, Optional
+
 from .camera_actions import ACTION_DESCRIPTIONS, VALID_ACTIONS
 
 
 def write_llm_prompt(
     output_dir: str,
     camera_state: dict,
-    action_history: list[dict],
+    action_history: List[Dict],
     target_description: str,
     screenshot_path: str,
-    target_image_path: str | None = None,
+    target_image_path: Optional[str] = None,
 ) -> str:
     lines = []
 

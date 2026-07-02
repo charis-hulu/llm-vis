@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from pathlib import Path
+from typing import Union
 
 
 def get_camera_state(camera) -> dict:
@@ -27,12 +28,12 @@ def camera_distance(state: dict) -> float:
     return float(np.linalg.norm(pos - fp))
 
 
-def save_camera_state_json(state: dict, path: str | Path):
+def save_camera_state_json(state: dict, path: Union[str, Path]):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
         json.dump(state, f, indent=2)
 
 
-def load_camera_state_json(path: str | Path) -> dict:
+def load_camera_state_json(path: Union[str, Path]) -> dict:
     with open(path) as f:
         return json.load(f)
