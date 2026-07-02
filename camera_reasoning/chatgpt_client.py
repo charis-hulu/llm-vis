@@ -1,0 +1,58 @@
+import base64
+import os
+from pathlib import Path
+from typing import Optional
+
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+DEFAULT_MODEL = "gpt-4o"
+
+
+def _encode_image(path: str) -> str:
+    data = Path(path).read_bytes()
+    return base64.b64encode(data).decode("utf-8")
+
+
+def ask_chatgpt(
+    prompt: str,
+    screenshot_path: str,
+    target_image_path: Optional[str] = None,
+    model: Optional[str] = None,
+) -> str:
+    """Send the camera-reasoning prompt and screenshot(s) to the OpenAI API and return the reply text.
+
+    `model` falls back to the AI_MODEL env var, then DEFAULT_MODEL. The API base URL
+    can be overridden via the AI_URL env var (e.g. to point at an OpenAI-compatible proxy).
+    """
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "OPENAI_API_KEY is not set. Add it to the .env file in the project root "
+            "(see .env.example), or export it in your shell before starting Jupyter."
+        )
+
+    resolved_model = model or os.environ.get("AI_MODEL") or DEFAULT_MODEL
+    base_url = os.environ.get("AI_URL") or None
+
+    content = [{"type": "text", "text": prompt}]
+
+    screenshot_b64 = _encode_image(screenshot_path)
+    content.append(
+        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{screenshot_b64}"}}
+    )
+
+    if target_image_path and Path(target_image_path).exists():
+        target_b64 = _encode_image(target_image_path)
+        content.append(
+            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{target_b64}"}}
+        )
+
+    client = OpenAI(api_key=api_key, base_url=base_url)
+    response = client.chat.completions.create(
+        model=resolved_model,
+        messages=[{"role": "user", "content": content}],
+    )
+    return response.choices[0].message.content

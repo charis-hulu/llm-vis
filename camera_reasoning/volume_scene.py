@@ -1,5 +1,6 @@
 import numpy as np
 import vtk
+from vtk.util import numpy_support
 
 
 def load_raw_volume(path: str, dimensions: tuple, scalar_type: str = "uint8") -> vtk.vtkImageData:
@@ -20,7 +21,7 @@ def load_raw_volume(path: str, dimensions: tuple, scalar_type: str = "uint8") ->
     image.SetOrigin(0.0, 0.0, 0.0)
     image.SetSpacing(1.0, 1.0, 1.0)
 
-    vtk_array = vtk.util.numpy_support.numpy_to_vtk(
+    vtk_array = numpy_support.numpy_to_vtk(
         data.ravel(order="C"), deep=True, array_type=vtk.VTK_UNSIGNED_CHAR
     )
     image.GetPointData().SetScalars(vtk_array)

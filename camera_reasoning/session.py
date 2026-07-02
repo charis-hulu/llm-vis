@@ -14,6 +14,7 @@ from .camera_state import (
     save_camera_state_json,
     set_camera_state,
 )
+from .chatgpt_client import ask_chatgpt
 from .prompt_writer import write_llm_prompt
 from .volume_scene import build_isosurface_pipeline, load_raw_volume, save_screenshot
 
@@ -80,8 +81,31 @@ class CameraReasoningSession:
             target_image_path=self.target_image_path,
         )
 
-    def process_chatgpt_response(self, response: str):
-        """Parse a pasted ChatGPT response, apply the action, and advance the loop."""
+    def ask_chatgpt(self, prompt: Optional[str] = None, model: Optional[str] = None) -> str:
+        """Send a prompt + the current screenshot to the OpenAI API and return the raw reply.
+
+        Pass `prompt` to experiment with custom wording instead of the auto-generated one
+        (e.g. write_llm_prompt(), edit the text, then hand it in here). The response is not
+        applied automatically — pass it to process_chatgpt_response() when you're ready.
+        """
+        self._require_initialized()
+        if prompt is None:
+            prompt = self.write_llm_prompt()
+        return ask_chatgpt(
+            prompt=prompt,
+            screenshot_path=str(self.output_dir / "screenshots" / "latest.png"),
+            target_image_path=self.target_image_path,
+            model=model,
+        )
+
+    def ask_chatgpt_and_process(self, prompt: Optional[str] = None, model: Optional[str] = None) -> str:
+        """Convenience wrapper: ask_chatgpt() followed by process_chatgpt_response(). Returns the applied action."""
+        response = self.ask_chatgpt(prompt=prompt, model=model)
+        print(response)
+        return self.process_chatgpt_response(response)
+
+    def process_chatgpt_response(self, response: str) -> str:
+        """Parse a pasted ChatGPT response, apply the action, and advance the loop. Returns the action name."""
         self._require_initialized()
         action = extract_action(response)
         print(f"Extracted action: {action}")
@@ -90,12 +114,13 @@ class CameraReasoningSession:
             print("STOP received — alignment marked as complete.")
             self._append_history(action)
             self._save_action_history()
-            return
+            return action
 
         if action == "UNDO_LAST":
             self._do_undo()
         else:
             self._apply_and_advance(action)
+        return action
 
     def reset_camera(self):
         """Hard-reset camera to fit the scene (destroys manual alignment)."""
