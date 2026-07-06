@@ -1,0 +1,1134 @@
+{
+  "schema_version": "1.0",
+  "name": "foot_spatial_spec",
+  "object": {
+    "id": "foot",
+    "label": "Foot",
+    "domain": "anatomical_visual_reasoning",
+    "description": "Structured spatial knowledge for reasoning about foot bone views, camera orientation, image-space layout, and anatomical directions."
+  },
+  "core_principles": [
+    {
+      "id": "object_vs_image_space",
+      "principle": "Object-space anatomical relations are stable, while image-space layout changes with camera angle and image roll.",
+      "example": "ToeBones are distal to AnkleRegion in object space, but ToeBones may appear at the bottom, top, left, or right of an image depending on camera and roll."
+    },
+    {
+      "id": "view_vs_image_orientation",
+      "principle": "A view class describes where the camera is relative to the foot. Image orientation describes where parts appear on the 2D screen.",
+      "example": "DorsalTopDown remains a dorsal view whether toes appear at the bottom or top of the image."
+    },
+    {
+      "id": "minimal_update",
+      "principle": "When iterating toward a target render, change only camera/view parameters required by the diagnosed mismatch unless the target explicitly requires rendering changes."
+    }
+  ],
+  "anatomical_axes": {
+    "proximal_distal": {
+      "axis_id": "proximal_distal",
+      "positive_direction": "distal",
+      "negative_direction": "proximal",
+      "distal": {
+        "definition": "Toward the toes; farther from the body center.",
+        "points_toward": [
+          "ToeBones",
+          "Phalanges",
+          "DistalToeEnd"
+        ]
+      },
+      "proximal": {
+        "definition": "Toward the ankle/heel; closer to the body center.",
+        "points_toward": [
+          "AnkleRegion",
+          "Tarsals",
+          "Calcaneus",
+          "Talus",
+          "ProximalAnkleEnd"
+        ]
+      }
+    },
+    "dorsal_plantar": {
+      "axis_id": "dorsal_plantar",
+      "positive_direction": "dorsal",
+      "negative_direction": "plantar",
+      "dorsal": {
+        "definition": "Top surface of the foot.",
+        "points_toward": [
+          "DorsalSurface",
+          "DorsalTopDown"
+        ]
+      },
+      "plantar": {
+        "definition": "Bottom/sole surface of the foot.",
+        "points_toward": [
+          "PlantarSurface",
+          "PlantarBottomUp"
+        ]
+      }
+    },
+    "medial_lateral": {
+      "axis_id": "medial_lateral",
+      "positive_direction": "medial",
+      "negative_direction": "lateral",
+      "medial": {
+        "definition": "Big-toe side of the foot; toward the body midline in anatomical position.",
+        "points_toward": [
+          "Hallux",
+          "FirstMetatarsal",
+          "MedialSide"
+        ]
+      },
+      "lateral": {
+        "definition": "Little-toe side of the foot; away from the body midline in anatomical position.",
+        "points_toward": [
+          "FifthToe",
+          "FifthMetatarsal",
+          "LateralSide"
+        ]
+      }
+    }
+  },
+  "parts": {
+    "Foot": {
+      "type": "object",
+      "description": "Complete foot skeleton object used for rendering and spatial view reasoning.",
+      "has_parts": [
+        "ToeBones",
+        "Metatarsals",
+        "Tarsals",
+        "AnkleRegion"
+      ],
+      "has_surfaces": [
+        "DorsalSurface",
+        "PlantarSurface",
+        "MedialSideSurface",
+        "LateralSideSurface"
+      ]
+    },
+    "ToeBones": {
+      "type": "region",
+      "aliases": [
+        "Phalanges",
+        "Toes"
+      ],
+      "description": "Distal small bones of the foot, including big toe through little toe.",
+      "has_parts": [
+        "Hallux",
+        "SecondToe",
+        "ThirdToe",
+        "FourthToe",
+        "FifthToe"
+      ],
+      "object_space_location": {
+        "proximal_distal": "distal",
+        "dorsal_plantar": "both",
+        "medial_lateral": "spans_medial_to_lateral"
+      },
+      "visual_cues": [
+        "Several small segmented bones",
+        "Located at the distal/front end of the foot",
+        "Often appear as separate toe rays"
+      ]
+    },
+    "Hallux": {
+      "type": "part",
+      "aliases": [
+        "BigToe",
+        "FirstToe"
+      ],
+      "description": "Big toe; medial-most toe.",
+      "object_space_location": {
+        "proximal_distal": "distal",
+        "medial_lateral": "medial"
+      },
+      "visual_cues": [
+        "Usually larger/thicker than other toes",
+        "Located on the medial side"
+      ]
+    },
+    "SecondToe": {
+      "type": "part",
+      "description": "Second toe bone group.",
+      "object_space_location": {
+        "proximal_distal": "distal",
+        "medial_lateral": "near_medial"
+      }
+    },
+    "ThirdToe": {
+      "type": "part",
+      "description": "Middle toe bone group.",
+      "object_space_location": {
+        "proximal_distal": "distal",
+        "medial_lateral": "central"
+      }
+    },
+    "FourthToe": {
+      "type": "part",
+      "description": "Fourth toe bone group.",
+      "object_space_location": {
+        "proximal_distal": "distal",
+        "medial_lateral": "near_lateral"
+      }
+    },
+    "FifthToe": {
+      "type": "part",
+      "aliases": [
+        "LittleToe"
+      ],
+      "description": "Little toe; lateral-most toe.",
+      "object_space_location": {
+        "proximal_distal": "distal",
+        "medial_lateral": "lateral"
+      },
+      "visual_cues": [
+        "Smallest/lateral toe",
+        "Located on the lateral side"
+      ]
+    },
+    "Metatarsals": {
+      "type": "region",
+      "description": "Long bones between toe bones and tarsal/ankle region.",
+      "has_parts": [
+        "FirstMetatarsal",
+        "SecondMetatarsal",
+        "ThirdMetatarsal",
+        "FourthMetatarsal",
+        "FifthMetatarsal"
+      ],
+      "object_space_location": {
+        "proximal_distal": "middle_distal",
+        "medial_lateral": "spans_medial_to_lateral"
+      },
+      "visual_cues": [
+        "Long ray-like bones",
+        "Between toes and tarsals"
+      ]
+    },
+    "FirstMetatarsal": {
+      "type": "part",
+      "description": "Metatarsal associated with the big toe; medial side.",
+      "object_space_location": {
+        "proximal_distal": "middle_distal",
+        "medial_lateral": "medial"
+      }
+    },
+    "SecondMetatarsal": {
+      "type": "part",
+      "description": "Second metatarsal.",
+      "object_space_location": {
+        "proximal_distal": "middle_distal",
+        "medial_lateral": "near_medial"
+      }
+    },
+    "ThirdMetatarsal": {
+      "type": "part",
+      "description": "Third metatarsal.",
+      "object_space_location": {
+        "proximal_distal": "middle_distal",
+        "medial_lateral": "central"
+      }
+    },
+    "FourthMetatarsal": {
+      "type": "part",
+      "description": "Fourth metatarsal.",
+      "object_space_location": {
+        "proximal_distal": "middle_distal",
+        "medial_lateral": "near_lateral"
+      }
+    },
+    "FifthMetatarsal": {
+      "type": "part",
+      "description": "Metatarsal associated with the little toe; lateral side.",
+      "object_space_location": {
+        "proximal_distal": "middle_distal",
+        "medial_lateral": "lateral"
+      }
+    },
+    "Tarsals": {
+      "type": "region",
+      "description": "Cluster of bones near the ankle and heel.",
+      "has_parts": [
+        "Talus",
+        "Calcaneus",
+        "Navicular",
+        "Cuboid",
+        "Cuneiforms"
+      ],
+      "object_space_location": {
+        "proximal_distal": "proximal",
+        "medial_lateral": "spans_medial_to_lateral"
+      },
+      "visual_cues": [
+        "Compact clustered bones",
+        "Located proximal to metatarsals",
+        "Near ankle/heel region"
+      ]
+    },
+    "Talus": {
+      "type": "part",
+      "description": "Tarsal bone near ankle articulation.",
+      "object_space_location": {
+        "proximal_distal": "proximal",
+        "dorsal_plantar": "more_dorsal"
+      }
+    },
+    "Calcaneus": {
+      "type": "part",
+      "aliases": [
+        "HeelBone"
+      ],
+      "description": "Heel bone; large proximal/posterior tarsal bone.",
+      "object_space_location": {
+        "proximal_distal": "proximal",
+        "dorsal_plantar": "more_plantar"
+      }
+    },
+    "Navicular": {
+      "type": "part",
+      "description": "Medial tarsal bone between talus and cuneiforms.",
+      "object_space_location": {
+        "proximal_distal": "proximal",
+        "medial_lateral": "medial"
+      }
+    },
+    "Cuboid": {
+      "type": "part",
+      "description": "Lateral tarsal bone near fourth/fifth metatarsals.",
+      "object_space_location": {
+        "proximal_distal": "proximal",
+        "medial_lateral": "lateral"
+      }
+    },
+    "Cuneiforms": {
+      "type": "region",
+      "description": "Medial/intermediate/lateral cuneiform bones near first through third metatarsals.",
+      "object_space_location": {
+        "proximal_distal": "proximal_middle",
+        "medial_lateral": "medial_to_central"
+      }
+    },
+    "AnkleRegion": {
+      "type": "region",
+      "aliases": [
+        "HeelAnkleRegion",
+        "ProximalFootRegion"
+      ],
+      "description": "Proximal region of the foot skeleton around ankle and heel/tarsal cluster.",
+      "object_space_location": {
+        "proximal_distal": "proximal"
+      },
+      "visual_cues": [
+        "Compact cluster near top/back of foot depending on orientation",
+        "Opposite end from toe bones"
+      ]
+    }
+  },
+  "surfaces": {
+    "DorsalSurface": {
+      "definition": "Top surface of the foot.",
+      "opposite": "PlantarSurface",
+      "best_seen_in": [
+        "DorsalTopDown",
+        "DorsomedialOblique",
+        "DorsolateralOblique",
+        "DistalDorsalOblique",
+        "ProximalDorsalOblique"
+      ]
+    },
+    "PlantarSurface": {
+      "definition": "Bottom/sole surface of the foot.",
+      "opposite": "DorsalSurface",
+      "best_seen_in": [
+        "PlantarBottomUp",
+        "PlantarmedialOblique",
+        "PlantarlateralOblique"
+      ]
+    },
+    "MedialSideSurface": {
+      "definition": "Side surface on the big-toe side.",
+      "opposite": "LateralSideSurface",
+      "best_seen_in": [
+        "MedialSide",
+        "DorsomedialOblique",
+        "PlantarmedialOblique"
+      ]
+    },
+    "LateralSideSurface": {
+      "definition": "Side surface on the little-toe side.",
+      "opposite": "MedialSideSurface",
+      "best_seen_in": [
+        "LateralSide",
+        "DorsolateralOblique",
+        "PlantarlateralOblique"
+      ]
+    },
+    "DistalEndSurface": {
+      "definition": "End of the foot facing the toes.",
+      "opposite": "ProximalEndSurface",
+      "best_seen_in": [
+        "DistalToeEnd",
+        "DistalDorsalOblique"
+      ]
+    },
+    "ProximalEndSurface": {
+      "definition": "End of the foot facing ankle/heel.",
+      "opposite": "DistalEndSurface",
+      "best_seen_in": [
+        "ProximalAnkleEnd",
+        "ProximalDorsalOblique"
+      ]
+    }
+  },
+  "spatial_relations": [
+    {
+      "subject": "ToeBones",
+      "relation": "distal_to",
+      "object": "Metatarsals",
+      "space": "object_space"
+    },
+    {
+      "subject": "Metatarsals",
+      "relation": "proximal_to",
+      "object": "ToeBones",
+      "space": "object_space"
+    },
+    {
+      "subject": "Metatarsals",
+      "relation": "distal_to",
+      "object": "Tarsals",
+      "space": "object_space"
+    },
+    {
+      "subject": "Tarsals",
+      "relation": "proximal_to",
+      "object": "Metatarsals",
+      "space": "object_space"
+    },
+    {
+      "subject": "AnkleRegion",
+      "relation": "proximal_to",
+      "object": "ToeBones",
+      "space": "object_space"
+    },
+    {
+      "subject": "ToeBones",
+      "relation": "distal_to",
+      "object": "AnkleRegion",
+      "space": "object_space"
+    },
+    {
+      "subject": "Hallux",
+      "relation": "medial_to",
+      "object": "FifthToe",
+      "space": "object_space"
+    },
+    {
+      "subject": "FifthToe",
+      "relation": "lateral_to",
+      "object": "Hallux",
+      "space": "object_space"
+    },
+    {
+      "subject": "FirstMetatarsal",
+      "relation": "medial_to",
+      "object": "FifthMetatarsal",
+      "space": "object_space"
+    },
+    {
+      "subject": "FifthMetatarsal",
+      "relation": "lateral_to",
+      "object": "FirstMetatarsal",
+      "space": "object_space"
+    },
+    {
+      "subject": "DorsalSurface",
+      "relation": "opposite_of",
+      "object": "PlantarSurface",
+      "space": "object_space"
+    },
+    {
+      "subject": "MedialSideSurface",
+      "relation": "opposite_of",
+      "object": "LateralSideSurface",
+      "space": "object_space"
+    },
+    {
+      "subject": "DistalEndSurface",
+      "relation": "opposite_of",
+      "object": "ProximalEndSurface",
+      "space": "object_space"
+    }
+  ],
+  "canonical_views": {
+    "DorsalTopDown": {
+      "view_type": "canonical",
+      "camera_from": "dorsal",
+      "looks_toward": "plantar",
+      "primary_axis": "dorsal_plantar",
+      "opposite_view": "PlantarBottomUp",
+      "description": "Camera is above the top of the foot, looking downward toward the plantar/sole side.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "DorsalSurface"
+        ],
+        "primary_parts": [
+          "ToeBones",
+          "Metatarsals",
+          "Tarsals",
+          "AnkleRegion"
+        ],
+        "secondary_surfaces": [],
+        "minimal_or_hidden": [
+          "PlantarSurface",
+          "MedialSideSurface",
+          "LateralSideSurface"
+        ]
+      },
+      "expected_visual_cues": [
+        "Top/dorsal surface dominates",
+        "Toe rays and metatarsals are visible from above",
+        "Side depth should be minimal for a pure top-down view"
+      ],
+      "common_image_orientations": [
+        {
+          "name": "toes_bottom_ankle_top",
+          "ToeBones": "bottom",
+          "AnkleRegion": "top",
+          "interpretation": "Image vertical axis roughly maps proximal-to-distal, with distal/toes downward."
+        },
+        {
+          "name": "toes_top_ankle_bottom",
+          "ToeBones": "top",
+          "AnkleRegion": "bottom",
+          "interpretation": "Same anatomical view as dorsal top-down, but image roll is approximately 180 degrees from toes_bottom_ankle_top."
+        }
+      ],
+      "camera_update_hint": {
+        "make_more_like_this": "Move camera toward dorsal side and look toward plantar side; reduce oblique side component.",
+        "if_side_depth_too_visible": "Reduce tilt/oblique component; align view direction more closely with dorsal-to-plantar axis."
+      }
+    },
+    "PlantarBottomUp": {
+      "view_type": "canonical",
+      "camera_from": "plantar",
+      "looks_toward": "dorsal",
+      "primary_axis": "dorsal_plantar",
+      "opposite_view": "DorsalTopDown",
+      "description": "Camera is below the sole of the foot, looking upward toward the dorsal/top side.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "PlantarSurface"
+        ],
+        "primary_parts": [
+          "ToeBones",
+          "Metatarsals",
+          "Tarsals",
+          "AnkleRegion"
+        ],
+        "secondary_surfaces": [],
+        "minimal_or_hidden": [
+          "DorsalSurface",
+          "MedialSideSurface",
+          "LateralSideSurface"
+        ]
+      },
+      "expected_visual_cues": [
+        "Plantar/sole side dominates",
+        "Opposite of dorsal top-down",
+        "Side depth should be minimal for a pure bottom-up view"
+      ],
+      "camera_update_hint": {
+        "make_more_like_this": "Move camera toward plantar side and look toward dorsal side."
+      }
+    },
+    "MedialSide": {
+      "view_type": "canonical",
+      "camera_from": "medial",
+      "looks_toward": "lateral",
+      "primary_axis": "medial_lateral",
+      "opposite_view": "LateralSide",
+      "description": "Camera views the foot from the big-toe side toward the little-toe side.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "MedialSideSurface"
+        ],
+        "primary_parts": [
+          "Hallux",
+          "FirstMetatarsal",
+          "Navicular",
+          "Cuneiforms"
+        ],
+        "secondary_surfaces": [
+          "DorsalSurface",
+          "PlantarSurface"
+        ],
+        "minimal_or_hidden": [
+          "LateralSideSurface",
+          "FifthToe",
+          "FifthMetatarsal"
+        ]
+      },
+      "expected_visual_cues": [
+        "Big-toe side is emphasized",
+        "Hallux/first metatarsal side is more visible",
+        "Foot profile is seen from the medial side"
+      ],
+      "camera_update_hint": {
+        "make_more_like_this": "Move camera toward medial/big-toe side and look toward lateral/little-toe side.",
+        "if_little_toe_side_dominates": "Rotate camera around the foot to the opposite side until big-toe side dominates."
+      }
+    },
+    "LateralSide": {
+      "view_type": "canonical",
+      "camera_from": "lateral",
+      "looks_toward": "medial",
+      "primary_axis": "medial_lateral",
+      "opposite_view": "MedialSide",
+      "description": "Camera views the foot from the little-toe side toward the big-toe side.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "LateralSideSurface"
+        ],
+        "primary_parts": [
+          "FifthToe",
+          "FifthMetatarsal",
+          "Cuboid"
+        ],
+        "secondary_surfaces": [
+          "DorsalSurface",
+          "PlantarSurface"
+        ],
+        "minimal_or_hidden": [
+          "MedialSideSurface",
+          "Hallux",
+          "FirstMetatarsal"
+        ]
+      },
+      "expected_visual_cues": [
+        "Little-toe side is emphasized",
+        "Fifth toe/fifth metatarsal side is more visible",
+        "Foot profile is seen from the lateral side"
+      ],
+      "camera_update_hint": {
+        "make_more_like_this": "Move camera toward lateral/little-toe side and look toward medial/big-toe side.",
+        "if_big_toe_side_dominates": "Rotate camera around the foot to the opposite side until little-toe side dominates."
+      }
+    },
+    "DistalToeEnd": {
+      "view_type": "canonical",
+      "camera_from": "distal",
+      "looks_toward": "proximal",
+      "primary_axis": "proximal_distal",
+      "opposite_view": "ProximalAnkleEnd",
+      "description": "Camera is placed in front of the toes, looking from the toe end toward the ankle/heel end.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "DistalEndSurface"
+        ],
+        "primary_parts": [
+          "ToeBones",
+          "Hallux",
+          "SecondToe",
+          "ThirdToe",
+          "FourthToe",
+          "FifthToe"
+        ],
+        "secondary_parts": [
+          "Metatarsals"
+        ],
+        "minimal_or_hidden": [
+          "ProximalEndSurface",
+          "AnkleRegion"
+        ]
+      },
+      "expected_visual_cues": [
+        "Toe ends are closest to the camera",
+        "Metatarsals extend away from the viewer toward ankle region",
+        "Ankle/tarsals may be partly hidden behind distal structures"
+      ],
+      "camera_update_hint": {
+        "make_more_like_this": "Move camera toward distal/toe end and look toward proximal/ankle end."
+      }
+    },
+    "ProximalAnkleEnd": {
+      "view_type": "canonical",
+      "camera_from": "proximal",
+      "looks_toward": "distal",
+      "primary_axis": "proximal_distal",
+      "opposite_view": "DistalToeEnd",
+      "description": "Camera is placed near the ankle/heel end, looking from proximal region toward the toes.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "ProximalEndSurface"
+        ],
+        "primary_parts": [
+          "AnkleRegion",
+          "Tarsals",
+          "Talus",
+          "Calcaneus"
+        ],
+        "secondary_parts": [
+          "Metatarsals"
+        ],
+        "minimal_or_hidden": [
+          "DistalEndSurface",
+          "ToeBones"
+        ]
+      },
+      "expected_visual_cues": [
+        "Ankle/tarsal cluster is closest to the camera",
+        "Metatarsals and toes extend away from the viewer",
+        "Opposite of distal toe-end view"
+      ],
+      "camera_update_hint": {
+        "make_more_like_this": "Move camera toward proximal/ankle end and look toward distal/toe end."
+      }
+    }
+  },
+  "oblique_view_families": {
+    "DorsomedialOblique": {
+      "view_type": "oblique",
+      "primary_axis": "dorsal",
+      "secondary_axis": "medial",
+      "description": "Mostly dorsal/top view with a medial/big-toe-side component.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "DorsalSurface"
+        ],
+        "secondary_surfaces": [
+          "MedialSideSurface"
+        ],
+        "primary_parts": [
+          "ToeBones",
+          "Metatarsals",
+          "Tarsals"
+        ],
+        "emphasized_parts": [
+          "Hallux",
+          "FirstMetatarsal"
+        ]
+      },
+      "diagnosis_rule": "If dorsal surface is visible and big-toe side/depth is also visible, classify as dorsomedial oblique rather than pure dorsal top-down."
+    },
+    "DorsolateralOblique": {
+      "view_type": "oblique",
+      "primary_axis": "dorsal",
+      "secondary_axis": "lateral",
+      "description": "Mostly dorsal/top view with a lateral/little-toe-side component.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "DorsalSurface"
+        ],
+        "secondary_surfaces": [
+          "LateralSideSurface"
+        ],
+        "primary_parts": [
+          "ToeBones",
+          "Metatarsals",
+          "Tarsals"
+        ],
+        "emphasized_parts": [
+          "FifthToe",
+          "FifthMetatarsal",
+          "Cuboid"
+        ]
+      },
+      "diagnosis_rule": "If dorsal surface is visible and little-toe side/depth is also visible, classify as dorsolateral oblique rather than pure dorsal top-down."
+    },
+    "PlantarmedialOblique": {
+      "view_type": "oblique",
+      "primary_axis": "plantar",
+      "secondary_axis": "medial",
+      "description": "Mostly plantar/bottom view with a medial/big-toe-side component.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "PlantarSurface"
+        ],
+        "secondary_surfaces": [
+          "MedialSideSurface"
+        ],
+        "emphasized_parts": [
+          "Hallux",
+          "FirstMetatarsal"
+        ]
+      }
+    },
+    "PlantarlateralOblique": {
+      "view_type": "oblique",
+      "primary_axis": "plantar",
+      "secondary_axis": "lateral",
+      "description": "Mostly plantar/bottom view with a lateral/little-toe-side component.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "PlantarSurface"
+        ],
+        "secondary_surfaces": [
+          "LateralSideSurface"
+        ],
+        "emphasized_parts": [
+          "FifthToe",
+          "FifthMetatarsal",
+          "Cuboid"
+        ]
+      }
+    },
+    "DistalDorsalOblique": {
+      "view_type": "oblique",
+      "primary_axis": "distal",
+      "secondary_axis": "dorsal",
+      "description": "View from toe end with some top/dorsal visibility.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "DistalEndSurface"
+        ],
+        "secondary_surfaces": [
+          "DorsalSurface"
+        ],
+        "emphasized_parts": [
+          "ToeBones",
+          "Metatarsals"
+        ]
+      }
+    },
+    "ProximalDorsalOblique": {
+      "view_type": "oblique",
+      "primary_axis": "proximal",
+      "secondary_axis": "dorsal",
+      "description": "View from ankle/heel end with some top/dorsal visibility.",
+      "expected_visible": {
+        "primary_surfaces": [
+          "ProximalEndSurface"
+        ],
+        "secondary_surfaces": [
+          "DorsalSurface"
+        ],
+        "emphasized_parts": [
+          "AnkleRegion",
+          "Tarsals",
+          "Metatarsals"
+        ]
+      }
+    }
+  },
+  "image_observation_schema": {
+    "description": "Recommended structure for a visual diagnosis produced from the current image.",
+    "fields": {
+      "visible_parts": {
+        "type": "array[string]",
+        "examples": [
+          "ToeBones",
+          "Metatarsals",
+          "Tarsals",
+          "AnkleRegion"
+        ]
+      },
+      "dominant_surface_or_side": {
+        "type": "string",
+        "examples": [
+          "dorsal",
+          "plantar",
+          "medial",
+          "lateral",
+          "distal",
+          "proximal",
+          "unknown"
+        ]
+      },
+      "image_layout": {
+        "type": "object",
+        "description": "2D screen-space location of anatomical parts.",
+        "allowed_locations": [
+          "top",
+          "bottom",
+          "left",
+          "right",
+          "center",
+          "upper_left",
+          "upper_right",
+          "lower_left",
+          "lower_right",
+          "unknown"
+        ],
+        "example": {
+          "ToeBones": "bottom",
+          "AnkleRegion": "top",
+          "Hallux": "left",
+          "FifthToe": "right"
+        }
+      },
+      "visual_cues": {
+        "type": "object",
+        "example": {
+          "top_surface_visible": true,
+          "bottom_surface_visible": false,
+          "side_depth_visible": true,
+          "toe_end_closest": false,
+          "ankle_end_closest": false
+        }
+      },
+      "inferred_current_view": {
+        "type": "string",
+        "examples": [
+          "DorsalTopDown",
+          "DorsomedialOblique",
+          "MedialSide",
+          "unknown"
+        ]
+      },
+      "confidence": {
+        "type": "number",
+        "range": [
+          0,
+          1
+        ]
+      }
+    }
+  },
+  "reasoning_rules": [
+    {
+      "id": "classify_dorsal_topdown",
+      "if": [
+        "dominant_surface_or_side == dorsal",
+        "side_depth_visible == false or minimal",
+        "plantar_surface_dominates == false"
+      ],
+      "then": {
+        "view": "DorsalTopDown",
+        "diagnosis": "The camera is mostly above the foot looking from dorsal toward plantar."
+      }
+    },
+    {
+      "id": "classify_plantar_bottomup",
+      "if": [
+        "dominant_surface_or_side == plantar",
+        "side_depth_visible == false or minimal",
+        "dorsal_surface_dominates == false"
+      ],
+      "then": {
+        "view": "PlantarBottomUp",
+        "diagnosis": "The camera is mostly below the foot looking from plantar toward dorsal."
+      }
+    },
+    {
+      "id": "classify_medial_side",
+      "if": [
+        "dominant_surface_or_side == medial",
+        "Hallux or FirstMetatarsal is emphasized",
+        "FifthToe or FifthMetatarsal is not dominant"
+      ],
+      "then": {
+        "view": "MedialSide",
+        "diagnosis": "The camera is on the big-toe side looking toward the little-toe side."
+      }
+    },
+    {
+      "id": "classify_lateral_side",
+      "if": [
+        "dominant_surface_or_side == lateral",
+        "FifthToe or FifthMetatarsal is emphasized",
+        "Hallux or FirstMetatarsal is not dominant"
+      ],
+      "then": {
+        "view": "LateralSide",
+        "diagnosis": "The camera is on the little-toe side looking toward the big-toe side."
+      }
+    },
+    {
+      "id": "classify_distal_toe_end",
+      "if": [
+        "ToeBones are closest or frontal",
+        "camera appears to look from toes toward ankle",
+        "AnkleRegion is behind or partially hidden"
+      ],
+      "then": {
+        "view": "DistalToeEnd",
+        "diagnosis": "The camera is at the toe end looking toward the ankle/heel end."
+      }
+    },
+    {
+      "id": "classify_proximal_ankle_end",
+      "if": [
+        "AnkleRegion or Tarsals are closest or frontal",
+        "camera appears to look from ankle/heel toward toes",
+        "ToeBones are behind or farther away"
+      ],
+      "then": {
+        "view": "ProximalAnkleEnd",
+        "diagnosis": "The camera is at the ankle/heel end looking toward the toes."
+      }
+    },
+    {
+      "id": "detect_dorsal_oblique",
+      "if": [
+        "dorsal/top surface is visible",
+        "side_depth_visible == true"
+      ],
+      "then": {
+        "not_view": "PureDorsalTopDown",
+        "possible_views": [
+          "DorsomedialOblique",
+          "DorsolateralOblique",
+          "DistalDorsalOblique",
+          "ProximalDorsalOblique"
+        ],
+        "diagnosis": "The view is dorsal-oblique rather than pure top-down."
+      }
+    },
+    {
+      "id": "infer_toes_bottom_orientation",
+      "if": [
+        "image_layout.ToeBones == bottom",
+        "image_layout.AnkleRegion == top"
+      ],
+      "then": {
+        "image_orientation": "toes_bottom_ankle_top",
+        "interpretation": "The screen vertical axis maps roughly from proximal at top to distal at bottom."
+      }
+    },
+    {
+      "id": "infer_toes_top_orientation",
+      "if": [
+        "image_layout.ToeBones == top",
+        "image_layout.AnkleRegion == bottom"
+      ],
+      "then": {
+        "image_orientation": "toes_top_ankle_bottom",
+        "interpretation": "This can be the same anatomical view as toes-bottom but with approximately 180 degree image roll."
+      }
+    },
+    {
+      "id": "do_not_confuse_roll_with_view",
+      "if": [
+        "same surface is visible",
+        "same camera_from direction is implied",
+        "only ToeBones/AnkleRegion screen positions are swapped"
+      ],
+      "then": {
+        "diagnosis": "Likely image roll/orientation mismatch, not a different anatomical view.",
+        "update_hint": "Adjust camera roll/view_up rather than changing the main camera side."
+      }
+    },
+    {
+      "id": "minimal_update_rule",
+      "if": [
+        "target mismatch is mainly view angle"
+      ],
+      "then": {
+        "update_hint": "Change camera position, focal point, view direction, or view_up only. Do not change opacity, color transfer function, isovalue, or rendering style unless explicitly required."
+      }
+    }
+  ],
+  "target_interpretation_guidelines": [
+    {
+      "target_phrase": "dorsal top-down view",
+      "interpret_as": "DorsalTopDown",
+      "requirements": [
+        "Camera from dorsal side",
+        "Looks toward plantar side",
+        "Dorsal/top surface dominates",
+        "Side depth minimal unless target says oblique"
+      ]
+    },
+    {
+      "target_phrase": "plantar bottom-up view",
+      "interpret_as": "PlantarBottomUp",
+      "requirements": [
+        "Camera from plantar/sole side",
+        "Looks toward dorsal side",
+        "Plantar/bottom surface dominates"
+      ]
+    },
+    {
+      "target_phrase": "medial side view",
+      "interpret_as": "MedialSide",
+      "requirements": [
+        "Camera from big-toe side",
+        "Looks toward little-toe side",
+        "Hallux/first metatarsal side emphasized"
+      ]
+    },
+    {
+      "target_phrase": "lateral side view",
+      "interpret_as": "LateralSide",
+      "requirements": [
+        "Camera from little-toe side",
+        "Looks toward big-toe side",
+        "Fifth toe/fifth metatarsal side emphasized"
+      ]
+    },
+    {
+      "target_phrase": "distal view or toe-end view",
+      "interpret_as": "DistalToeEnd",
+      "requirements": [
+        "Camera from toe end",
+        "Looks toward ankle/heel end",
+        "Toe ends are frontal/closest"
+      ]
+    },
+    {
+      "target_phrase": "proximal view or ankle-end view",
+      "interpret_as": "ProximalAnkleEnd",
+      "requirements": [
+        "Camera from ankle/heel end",
+        "Looks toward toe end",
+        "Ankle/tarsal region is frontal/closest"
+      ]
+    },
+    {
+      "target_phrase": "oblique angle",
+      "interpret_as": "ObliqueViewFamily",
+      "requirements": [
+        "Primary surface or side still identifiable",
+        "At least one secondary side/depth component visible",
+        "Do not classify as pure canonical view if side/depth is significant"
+      ]
+    }
+  ],
+  "agent_prompt_instructions": [
+    "Use this JSON as the source of truth for anatomical directions and canonical view definitions.",
+    "Always distinguish object-space anatomical facts from image-space observations.",
+    "Classify the intended target view using canonical_views and oblique_view_families.",
+    "Compare the current visual diagnosis against expected_visible and expected_visual_cues.",
+    "Identify the smallest mismatch between current image and target view.",
+    "Recommend the minimal camera/rendering update required to fix that mismatch.",
+    "Do not invent new anatomical facts outside this JSON unless the visual evidence requires a cautious unknown/uncertain label.",
+    "Do not treat screen position alone as anatomical view. Screen position may be caused by camera roll or image orientation."
+  ],
+  "sample_reasoning_examples": [
+    {
+      "target": "Show the foot bones in dorsal top-down view with toes at the bottom and ankle at the top.",
+      "expected_interpretation": {
+        "view": "DorsalTopDown",
+        "image_orientation": "toes_bottom_ankle_top",
+        "requirements": [
+          "Dorsal surface visible",
+          "Camera from dorsal toward plantar",
+          "ToeBones appear below AnkleRegion in image space",
+          "Side depth minimal"
+        ]
+      }
+    },
+    {
+      "target": "Show a medial side view.",
+      "expected_interpretation": {
+        "view": "MedialSide",
+        "requirements": [
+          "Camera from medial/big-toe side",
+          "Looks toward lateral/little-toe side",
+          "Hallux and FirstMetatarsal side emphasized"
+        ]
+      }
+    },
+    {
+      "target": "The current view is slightly oblique from above.",
+      "expected_interpretation": {
+        "view_family": "Dorsal oblique",
+        "requirements": [
+          "Dorsal surface visible",
+          "Some side/depth visible",
+          "Not pure DorsalTopDown"
+        ]
+      }
+    }
+  ]
+}

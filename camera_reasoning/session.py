@@ -16,6 +16,11 @@ from .camera_state import (
 )
 from .chatgpt_client import ask_chatgpt
 from .prompt_writer import write_llm_prompt
+from .spatial_knowledge import (
+    build_target_spatial_context,
+    extract_spatial_diagnosis,
+    load_simple_spatial_knowledge,
+)
 from .volume_scene import build_isosurface_pipeline, load_raw_volume, save_screenshot
 
 MIN_CAMERA_DISTANCE = 1e-3
@@ -31,6 +36,7 @@ class CameraReasoningSession:
         output_dir: str = "output",
         target_description: str = "No target description provided.",
         target_image_path: Optional[str] = None,
+        simple_spatial_knowledge_path: Optional[str] = None,
     ):
         self.raw_path = raw_path
         self.dimensions = dimensions
@@ -48,6 +54,21 @@ class CameraReasoningSession:
         self._step = 0
         self._action_history: List[Dict] = []
         self._camera_state_stack: List[Dict] = []
+
+        # Optional lightweight spatial-knowledge spec (see camera_reasoning/spatial_knowledge.py).
+        # Fully backward compatible: if no path is given, or loading fails, self._spatial_context
+        # stays None and the prompt/response format is unchanged from before this feature existed.
+        self._spatial_data: Optional[dict] = None
+        self._spatial_context: Optional[str] = None
+        self._last_spatial_diagnosis: dict = {}  # last parsed SPATIAL_DIAGNOSIS block, for future strict checks
+        if simple_spatial_knowledge_path:
+            self._spatial_data = load_simple_spatial_knowledge(simple_spatial_knowledge_path)
+            if self._spatial_data:
+                self._spatial_context = build_target_spatial_context(
+                    self._spatial_data, self.target_description
+                )
+                print("[spatial_knowledge] Spatial context for this session:")
+                print(self._spatial_context)
 
     # ------------------------------------------------------------------
     # Public API
@@ -79,6 +100,7 @@ class CameraReasoningSession:
             target_description=self.target_description,
             screenshot_path=str(self.output_dir / "screenshots" / "latest.png"),
             target_image_path=self.target_image_path,
+            spatial_context=self._spatial_context,
         )
 
     def ask_chatgpt(self, prompt: Optional[str] = None, model: Optional[str] = None) -> str:
@@ -107,6 +129,10 @@ class CameraReasoningSession:
     def process_chatgpt_response(self, response: str) -> str:
         """Parse a pasted ChatGPT response, apply the action, and advance the loop. Returns the action name."""
         self._require_initialized()
+
+        if self._spatial_context:
+            self._log_spatial_diagnosis(response)
+
         action = extract_action(response)
         print(f"Extracted action: {action}")
 
@@ -140,6 +166,40 @@ class CameraReasoningSession:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _log_spatial_diagnosis(self, response: str):
+        """Parse and log the required SPATIAL_DIAGNOSIS block. Never raises: a missing or
+        malformed block only produces a warning, it doesn't block action application.
+
+        self._last_spatial_diagnosis is kept around so a future caller can add strict
+        enforcement (e.g. reject the action if likely_issue_type is missing/inconsistent)
+        without having to change how the response is parsed.
+        """
+        diagnosis = extract_spatial_diagnosis(response)
+        self._last_spatial_diagnosis = diagnosis
+
+        if not diagnosis:
+            print(
+                "[spatial_knowledge] Missing SPATIAL_DIAGNOSIS block; "
+                "model may not have followed the required diagnostic format."
+            )
+            return
+
+        raw_obs = diagnosis.get("raw_visual_observation", {})
+        diag = diagnosis.get("diagnosis", {})
+        update = diagnosis.get("minimal_update", {})
+
+        print("[spatial_knowledge] Parsed SPATIAL_DIAGNOSIS:")
+        print(f"  target_view: {diagnosis.get('target_view', '?')}")
+        print(f"  visible_surface: {raw_obs.get('visible_surface', '?')}")
+        print(f"  visible_parts: {raw_obs.get('visible_parts', '?')}")
+        print(f"  dominant_side: {raw_obs.get('dominant_side', '?')}")
+        print(f"  closest_region: {raw_obs.get('closest_region', '?')}")
+        print(f"  side_depth: {raw_obs.get('side_depth', '?')}")
+        print(f"  image_roll: {raw_obs.get('image_roll', '?')}")
+        print(f"  current_view_estimate: {diag.get('current_view_estimate', '?')}")
+        print(f"  likely_issue_type: {diag.get('likely_issue_type', '?')}")
+        print(f"  recommended_update: {update.get('recommended_update', '?')}")
 
     def _require_initialized(self):
         if self._renderer is None:

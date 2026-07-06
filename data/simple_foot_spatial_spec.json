@@ -1,0 +1,169 @@
+{
+  "name": "simple_foot_spatial_spec",
+  "version": "0.1",
+  "purpose": "Minimal spatial knowledge for foot-bone visual reasoning. Keep this file simple and human-verifiable.",
+  "object": "Foot",
+  "anatomical_terms": {
+    "dorsal": "top side of the foot",
+    "plantar": "bottom/sole side of the foot",
+    "medial": "big-toe side of the foot",
+    "lateral": "little-toe side of the foot",
+    "distal": "toward the toes",
+    "proximal": "toward the ankle/heel"
+  },
+  "main_parts": {
+    "toes": {
+      "also_called": [
+        "ToeBones",
+        "Phalanges"
+      ],
+      "location": "distal end of the foot"
+    },
+    "metatarsals": {
+      "location": "middle long bones between toes and ankle/tarsals"
+    },
+    "ankle_region": {
+      "also_called": [
+        "Tarsals",
+        "Heel/Ankle Region"
+      ],
+      "location": "proximal end of the foot"
+    },
+    "big_toe_side": {
+      "also_called": [
+        "Hallux side"
+      ],
+      "location": "medial side"
+    },
+    "little_toe_side": {
+      "also_called": [
+        "Fifth toe side"
+      ],
+      "location": "lateral side"
+    }
+  },
+  "stable_object_space_facts": [
+    "Toes are distal to the ankle region.",
+    "Ankle region is proximal to the toes.",
+    "Big toe side is medial.",
+    "Little toe side is lateral.",
+    "Dorsal is opposite plantar.",
+    "Medial is opposite lateral.",
+    "Distal is opposite proximal."
+  ],
+  "canonical_views": {
+    "DorsalTopDown": {
+      "meaning": "View from the top/dorsal side of the foot looking toward the plantar side.",
+      "camera_from": "dorsal",
+      "looks_toward": "plantar",
+      "should_see": [
+        "top/dorsal surface",
+        "toes",
+        "metatarsals",
+        "ankle_region"
+      ],
+      "should_not_dominate": [
+        "bottom/plantar surface",
+        "strong side depth"
+      ],
+      "simple_check": "If the top of the foot dominates and side depth is minimal, this is likely dorsal top-down."
+    },
+    "PlantarBottomUp": {
+      "meaning": "View from the bottom/plantar side of the foot looking toward the dorsal side.",
+      "camera_from": "plantar",
+      "looks_toward": "dorsal",
+      "should_see": [
+        "bottom/plantar surface"
+      ],
+      "should_not_dominate": [
+        "top/dorsal surface"
+      ],
+      "simple_check": "If the sole/bottom side dominates, this is likely plantar bottom-up."
+    },
+    "MedialSide": {
+      "meaning": "View from the big-toe/medial side looking toward the little-toe/lateral side.",
+      "camera_from": "medial",
+      "looks_toward": "lateral",
+      "should_see": [
+        "big_toe_side",
+        "inner side profile"
+      ],
+      "should_not_dominate": [
+        "little_toe_side"
+      ],
+      "simple_check": "If the big-toe side dominates, this is likely medial side view."
+    },
+    "LateralSide": {
+      "meaning": "View from the little-toe/lateral side looking toward the big-toe/medial side.",
+      "camera_from": "lateral",
+      "looks_toward": "medial",
+      "should_see": [
+        "little_toe_side",
+        "outer side profile"
+      ],
+      "should_not_dominate": [
+        "big_toe_side"
+      ],
+      "simple_check": "If the little-toe side dominates, this is likely lateral side view."
+    },
+    "DistalToeEnd": {
+      "meaning": "View from the toe/distal end looking toward the ankle/proximal end.",
+      "camera_from": "distal",
+      "looks_toward": "proximal",
+      "should_see": [
+        "toes closest/front-facing"
+      ],
+      "should_not_dominate": [
+        "ankle_region closest/front-facing"
+      ],
+      "simple_check": "If the toes are closest to the camera, this is likely distal toe-end view."
+    },
+    "ProximalAnkleEnd": {
+      "meaning": "View from the ankle/proximal end looking toward the toes/distal end.",
+      "camera_from": "proximal",
+      "looks_toward": "distal",
+      "should_see": [
+        "ankle_region closest/front-facing"
+      ],
+      "should_not_dominate": [
+        "toes closest/front-facing"
+      ],
+      "simple_check": "If the ankle/tarsal region is closest to the camera, this is likely proximal ankle-end view."
+    }
+  },
+  "image_space_notes": {
+    "definition": "Image-space describes where things appear on the 2D screen. It can change because of camera roll or image rotation.",
+    "examples": [
+      "Toes appearing at the bottom does not by itself define the anatomical view.",
+      "A dorsal top-down view can have toes at the bottom, top, left, or right depending on image roll.",
+      "If toes are at bottom and ankle is at top, the image is oriented with distal direction downward.",
+      "If toes and ankle swap screen positions but the visible surface is the same, it may be a roll/orientation issue, not a new view."
+    ]
+  },
+  "minimal_reasoning_rules": [
+    {
+      "rule": "Classify target view",
+      "instruction": "Use canonical_views to decide which anatomical view the target asks for."
+    },
+    {
+      "rule": "Check current image",
+      "instruction": "Compare the visual diagnosis against the target view's should_see and should_not_dominate fields."
+    },
+    {
+      "rule": "Separate view from roll",
+      "instruction": "Do not confuse image-space position, such as toes at bottom, with object-space anatomical view."
+    },
+    {
+      "rule": "Minimal update",
+      "instruction": "Only change camera/view parameters needed to fix the mismatch. Do not change rendering style unless explicitly requested."
+    }
+  ],
+  "expected_agent_loop": [
+    "Read target description.",
+    "Map target to one canonical view.",
+    "Read current visual diagnosis.",
+    "Check what is missing or wrong using should_see and should_not_dominate.",
+    "Decide whether the issue is main view angle, image roll, or too much oblique/side depth.",
+    "Suggest the smallest camera update."
+  ]
+}
