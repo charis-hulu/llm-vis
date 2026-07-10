@@ -1,7 +1,7 @@
 """
-Small standalone tests for the target-specific spatial-knowledge diagnostic rubric
-(camera_reasoning/spatial_knowledge.py). No pytest in this project — plain asserts,
-run directly: .venv/bin/python examples/test_spatial_knowledge.py
+Small standalone tests for the spatial-knowledge helpers (camera_reasoning/spatial_knowledge.py).
+No pytest in this project — plain asserts, run directly:
+  .venv/bin/python examples/test_spatial_knowledge.py
 """
 import sys
 from pathlib import Path
@@ -11,7 +11,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from camera_reasoning import CameraReasoningSession
 from camera_reasoning.spatial_knowledge import (
     build_target_spatial_context,
-    extract_spatial_diagnosis,
+    dump_spatial_knowledge_json,
+    extract_diagnosis_sections,
     load_simple_spatial_knowledge,
     resolve_target_view,
 )
@@ -23,8 +24,13 @@ assert data is not None, "expected the spec to load"
 
 
 def test_resolve_target_view():
+    # resolve_target_view() derives all matching keywords from the JSON itself (view
+    # names, camera_from labels, main_parts names/synonyms) — nothing is hardcoded for
+    # this (or any) object, so a phrase like "sole" only resolves if it's literally
+    # derivable from the spec's own fields; "bottom" is, since it's a camelCase word
+    # in "PlantarBottomUp" itself.
     assert resolve_target_view(data, "Give me a dorsal top-down view") == "DorsalTopDown"
-    assert resolve_target_view(data, "Show the sole of the foot") == "PlantarBottomUp"
+    assert resolve_target_view(data, "Show the bottom of the foot") == "PlantarBottomUp"
     assert resolve_target_view(data, "big toe side / hallux view please") == "MedialSide"
     assert resolve_target_view(data, "little toe side view") == "LateralSide"
     assert resolve_target_view(data, "view from the toe end") == "DistalToeEnd"
@@ -54,62 +60,58 @@ def test_build_target_spatial_context_unresolved_lists_all_views():
 
 
 def test_build_target_spatial_context_includes_roll_warning():
+    # The roll/orientation-vs-anatomical-view warning comes entirely from the JSON's
+    # own image_space_notes — nothing about it is hardcoded in the code.
     context = build_target_spatial_context(data, "dorsal top-down view")
-    assert "image-space roll/orientation" in context
-    assert "not proof of anatomical view" in context or "not" in context
+    assert "Image-space vs. anatomical-view notes:" in context
+    assert data["image_space_notes"]["examples"][0] in context
     print("test_build_target_spatial_context_includes_roll_warning: OK")
 
 
-VALID_DIAGNOSIS_RESPONSE = """
-SPATIAL_DIAGNOSIS:
-```json
-{
-  "target_view": "DorsalTopDown",
-  "raw_visual_observation": {
-    "visible_surface": "mostly dorsal",
-    "visible_parts": ["toes", "metatarsals"],
-    "dominant_side": "neither",
-    "closest_region": "unclear",
-    "side_depth": "moderate",
-    "image_roll": "toes appear bottom",
-    "confidence": 0.7
-  },
-  "target_contract_check": {
-    "should_see_present": ["toes", "metatarsals"],
-    "should_see_missing": [],
-    "should_not_dominate_violations": ["strong side depth"],
-    "evidence_for_target": ["dorsal surface visible"],
-    "evidence_against_target": ["side depth present"]
-  },
-  "diagnosis": {
-    "current_view_estimate": "close but oblique",
-    "likely_issue_type": "too_oblique"
-  },
-  "minimal_update": {
-    "recommended_update": "reduce oblique tilt",
-    "minimal_change_rationale": "only elevation needs adjusting"
-  }
-}
-```
+def test_dump_spatial_knowledge_json_is_full_and_verbatim():
+    dumped = dump_spatial_knowledge_json(data)
+    # every canonical view present, not just a resolved subset — this is the live
+    # session's actual context source now (see CameraReasoningSession.__init__).
+    for name in data["canonical_views"]:
+        assert f'"{name}"' in dumped
+    assert '"should_not_dominate"' in dumped  # raw JSON keys, not summarized prose
+    print("test_dump_spatial_knowledge_json_is_full_and_verbatim: OK")
+
+
+FREE_FORM_RESPONSE = """
+Visual observation:
+The image shows the dorsal (top) surface of the foot with toes near the bottom and
+the ankle region near the top. There is a small amount of side depth visible.
+
+Camera position inference:
+Based on the spatial knowledge above, the camera is close to the DorsalTopDown
+position but slightly oblique rather than perfectly perpendicular to the dorsal surface.
+
+Reasoning:
+Since the target is DorsalTopDown and the current view is mostly correct but oblique,
+a small elevation adjustment should straighten it out.
 
 Next action:
 ELEVATION_UP_FINE
+
+Expected visual change:
+Side depth will decrease and the view will look more directly top-down.
 """
 
 
-def test_extract_spatial_diagnosis_valid():
-    diagnosis = extract_spatial_diagnosis(VALID_DIAGNOSIS_RESPONSE)
-    assert diagnosis["target_view"] == "DorsalTopDown"
-    assert diagnosis["diagnosis"]["likely_issue_type"] == "too_oblique"
-    assert diagnosis["raw_visual_observation"]["side_depth"] == "moderate"
-    print("test_extract_spatial_diagnosis_valid: OK")
+def test_extract_diagnosis_sections_valid():
+    sections = extract_diagnosis_sections(FREE_FORM_RESPONSE)
+    assert "toes near the bottom" in sections["visual_observation"]
+    assert "DorsalTopDown" in sections["camera_position_inference"]
+    # sections must not bleed into each other or into Reasoning/Next action
+    assert "Reasoning" not in sections["camera_position_inference"]
+    assert "ELEVATION_UP_FINE" not in sections["camera_position_inference"]
+    print("test_extract_diagnosis_sections_valid: OK")
 
 
-def test_extract_spatial_diagnosis_missing_or_invalid():
-    assert extract_spatial_diagnosis("no diagnosis block here, just text") == {}
-    broken = "SPATIAL_DIAGNOSIS:\n```json\n{ this is not valid json \n```\nNext action:\nSTOP"
-    assert extract_spatial_diagnosis(broken) == {}
-    print("test_extract_spatial_diagnosis_missing_or_invalid: OK")
+def test_extract_diagnosis_sections_missing():
+    assert extract_diagnosis_sections("Next action:\nSTOP") == {}
+    print("test_extract_diagnosis_sections_missing: OK")
 
 
 def test_session_logging_does_not_crash_on_missing_diagnosis():
@@ -124,10 +126,11 @@ def test_session_logging_does_not_crash_on_missing_diagnosis():
     )
     session.initialize()
     session.render_and_save()
-    # No SPATIAL_DIAGNOSIS block at all — should warn, not raise, and still parse the action.
+    # No "Visual observation"/"Camera position inference" sections at all — must not crash,
+    # and (unlike the old strict-JSON gate) the action still applies since there's no longer
+    # a validation gate blocking it — diagnosis sections are logged, not enforced.
     action = session.process_chatgpt_response("Next action:\nSTOP")
     assert action == "STOP"
-    assert session._last_spatial_diagnosis == {}
     print("test_session_logging_does_not_crash_on_missing_diagnosis: OK")
 
 
@@ -136,7 +139,8 @@ if __name__ == "__main__":
     test_build_target_spatial_context_includes_only_target_view()
     test_build_target_spatial_context_unresolved_lists_all_views()
     test_build_target_spatial_context_includes_roll_warning()
-    test_extract_spatial_diagnosis_valid()
-    test_extract_spatial_diagnosis_missing_or_invalid()
+    test_dump_spatial_knowledge_json_is_full_and_verbatim()
+    test_extract_diagnosis_sections_valid()
+    test_extract_diagnosis_sections_missing()
     test_session_logging_does_not_crash_on_missing_diagnosis()
     print("\nAll tests passed.")

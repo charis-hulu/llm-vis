@@ -6,10 +6,12 @@ from .spatial_knowledge import (
     load_simple_spatial_knowledge,
     build_simple_spatial_context,
     build_target_spatial_context,
+    dump_spatial_knowledge_json,
     resolve_target_view,
     extract_structured_fields,
-    extract_spatial_diagnosis,
+    extract_diagnosis_sections,
 )
+from .reference_views import generate_reference_views, INITIAL_DORSAL_CAMERA, VIEW_ANGLES
 
 __all__ = [
     "CameraReasoningSession",
@@ -24,7 +26,11 @@ __all__ = [
     "load_simple_spatial_knowledge",
     "build_simple_spatial_context",
     "build_target_spatial_context",
+    "dump_spatial_knowledge_json",
     "resolve_target_view",
     "extract_structured_fields",
-    "extract_spatial_diagnosis",
+    "extract_diagnosis_sections",
+    "generate_reference_views",
+    "INITIAL_DORSAL_CAMERA",
+    "VIEW_ANGLES",
 ]

@@ -13,6 +13,8 @@ env/
 # Output (generated at runtime)
 output/screenshots/
 output/camera_states/
+output/replay_screenshots/
+output/traces/
 output/action_history.json
 output/llm_prompt.txt
 
@@ -21,6 +23,18 @@ data/*.raw
 data/*.nrrd
 data/*.mhd
 data/*.mha
+
+# Reference-view images + embedding caches (regeneratable — see
+# camera_reasoning/reference_views.py, image_view_matcher.py, text_view_matcher.py)
+reference_views/*.png
+reference_views/*.jpg
+reference_views/*.jpeg
+/reference_embeddings.pkl
+/reference_text_embeddings.pkl
+
+# Generated debug/demo images
+/match_results.png
+/Screenshot*.png
 
 # OS
 .DS_Store

@@ -17,10 +17,8 @@ from .camera_state import (
 from .chatgpt_client import ask_chatgpt
 from .prompt_writer import write_llm_prompt
 from .spatial_knowledge import (
-    build_camera_view_hint,
-    dump_spatial_knowledge_json,
-    extract_diagnosis_sections,
-    extract_structured_fields,
+    build_target_spatial_context,
+    extract_spatial_diagnosis,
     load_simple_spatial_knowledge,
 )
 from .volume_scene import build_isosurface_pipeline, load_raw_volume, save_screenshot
@@ -62,11 +60,14 @@ class CameraReasoningSession:
         # stays None and the prompt/response format is unchanged from before this feature existed.
         self._spatial_data: Optional[dict] = None
         self._spatial_context: Optional[str] = None
+        self._last_spatial_diagnosis: dict = {}  # last parsed SPATIAL_DIAGNOSIS block, for future strict checks
         if simple_spatial_knowledge_path:
             self._spatial_data = load_simple_spatial_knowledge(simple_spatial_knowledge_path)
             if self._spatial_data:
-                self._spatial_context = dump_spatial_knowledge_json(self._spatial_data)
-                print("[spatial_knowledge] Spatial context for this session (full JSON dump):")
+                self._spatial_context = build_target_spatial_context(
+                    self._spatial_data, self.target_description
+                )
+                print("[spatial_knowledge] Spatial context for this session:")
                 print(self._spatial_context)
 
     # ------------------------------------------------------------------
@@ -92,17 +93,14 @@ class CameraReasoningSession:
     def write_llm_prompt(self) -> str:
         """Write the LLM prompt file and return its text content."""
         self._require_initialized()
-        camera_state = get_camera_state(self._renderer.GetActiveCamera())
-        camera_view_hint = build_camera_view_hint(self._spatial_data, camera_state)
         return write_llm_prompt(
             output_dir=str(self.output_dir),
-            camera_state=camera_state,
+            camera_state=get_camera_state(self._renderer.GetActiveCamera()),
             action_history=self._action_history,
             target_description=self.target_description,
             screenshot_path=str(self.output_dir / "screenshots" / "latest.png"),
             target_image_path=self.target_image_path,
             spatial_context=self._spatial_context,
-            camera_view_hint=camera_view_hint,
         )
 
     def ask_chatgpt(self, prompt: Optional[str] = None, model: Optional[str] = None) -> str:
@@ -129,16 +127,11 @@ class CameraReasoningSession:
         return self.process_chatgpt_response(response)
 
     def process_chatgpt_response(self, response: str) -> str:
-        """Parse a pasted ChatGPT response, apply one action, and advance the loop.
-
-        When spatial knowledge is enabled, the model answers free-form (no forced JSON
-        schema) but the prompt requires it to cover: what it sees, an inferred camera
-        position, and then the action — logged here for visibility, not gated on.
-        """
+        """Parse a pasted ChatGPT response, apply the action, and advance the loop. Returns the action name."""
         self._require_initialized()
 
         if self._spatial_context:
-            self._log_diagnosis_sections(response)
+            self._log_spatial_diagnosis(response)
 
         action = extract_action(response)
         print(f"Extracted action: {action}")
@@ -174,28 +167,39 @@ class CameraReasoningSession:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _log_diagnosis_sections(self, response: str):
-        """Best-effort log of the free-form "Visual observation" / "Camera position
-        inference" sections and the current_view_inclination field, for visibility
-        only — never blocks action application.
-        """
-        sections = extract_diagnosis_sections(response)
-        fields = extract_structured_fields(response)
+    def _log_spatial_diagnosis(self, response: str):
+        """Parse and log the required SPATIAL_DIAGNOSIS block. Never raises: a missing or
+        malformed block only produces a warning, it doesn't block action application.
 
-        if not sections and "current_view_inclination" not in fields:
+        self._last_spatial_diagnosis is kept around so a future caller can add strict
+        enforcement (e.g. reject the action if likely_issue_type is missing/inconsistent)
+        without having to change how the response is parsed.
+        """
+        diagnosis = extract_spatial_diagnosis(response)
+        self._last_spatial_diagnosis = diagnosis
+
+        if not diagnosis:
             print(
-                "[spatial_knowledge] No 'Visual observation' / 'Camera position inference' "
-                "sections found in response (model may not have followed the requested format)."
+                "[spatial_knowledge] Missing SPATIAL_DIAGNOSIS block; "
+                "model may not have followed the required diagnostic format."
             )
             return
 
-        print("[spatial_knowledge] Diagnosis sections:")
-        if "visual_observation" in sections:
-            print(f"  Visual observation: {sections['visual_observation']}")
-        if "camera_position_inference" in sections:
-            print(f"  Camera position inference: {sections['camera_position_inference']}")
-        if "current_view_inclination" in fields:
-            print(f"  current_view_inclination: {fields['current_view_inclination']}")
+        raw_obs = diagnosis.get("raw_visual_observation", {})
+        diag = diagnosis.get("diagnosis", {})
+        update = diagnosis.get("minimal_update", {})
+
+        print("[spatial_knowledge] Parsed SPATIAL_DIAGNOSIS:")
+        print(f"  target_view: {diagnosis.get('target_view', '?')}")
+        print(f"  visible_surface: {raw_obs.get('visible_surface', '?')}")
+        print(f"  visible_parts: {raw_obs.get('visible_parts', '?')}")
+        print(f"  dominant_side: {raw_obs.get('dominant_side', '?')}")
+        print(f"  closest_region: {raw_obs.get('closest_region', '?')}")
+        print(f"  side_depth: {raw_obs.get('side_depth', '?')}")
+        print(f"  image_roll: {raw_obs.get('image_roll', '?')}")
+        print(f"  current_view_estimate: {diag.get('current_view_estimate', '?')}")
+        print(f"  likely_issue_type: {diag.get('likely_issue_type', '?')}")
+        print(f"  recommended_update: {update.get('recommended_update', '?')}")
 
     def _require_initialized(self):
         if self._renderer is None:
